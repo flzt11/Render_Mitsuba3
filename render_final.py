@@ -85,9 +85,9 @@ def render_and_save(scene_folder, file_name, save_root):
     cv2.imwrite(os.path.join(save_path, 'I135.png'), cv2.cvtColor(I135, cv2.COLOR_BGR2RGB) * 255)
 
 if __name__ == "__main__":
-    input_txt = r'D:\yan\Mitsuba3\tool\file_name.txt'  # 包含文件名的txt文件路径
-    scene_folder = r'D:\yan\shujuji\jilong_shujuji\target'  # 替换为包含场景文件的主文件夹路径
-    save_root = r'D:\yan\Mitsuba3\Diffusion_dataset\synthetic_data'  # 请替换为你指定的保存路径
+    input_txt = r'D:\yan\Mitsuba3\Render_Mitsuba3\subfolder_names.txt'  # 包含文件名的txt文件路径
+    scene_folder = r'D:\yan\shujuji\Diffusion_dataset\boundingbox_adjust'  # 替换为包含场景文件的主文件夹路径
+    save_root = r'D:\yan\shujuji\Diffusion_dataset\synthetic_data'  # 请替换为你指定的保存路径
 
     with open(input_txt, 'r') as file:
         file_names = [line.strip() for line in file if line.strip()]
