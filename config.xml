@@ -1,0 +1,79 @@
+<scene version="3.0.0">
+    <default name="spp" value="512"/>
+    <default name="res" value="512"/>
+
+    <integrator type="stokes">
+        <integrator type="aov">
+            <string name="aovs" value="dd:depth,nn:sh_normal"/>
+            <integrator type="path"/>
+        </integrator>
+    </integrator>
+
+    <sensor type="perspective">
+        <string name="fov_axis" value="smaller"/>
+        <float name="near_clip" value="0.01"/>
+        <float name="far_clip" value="1000"/>
+        <float name="focus_distance" value="1000"/>
+        <float name="fov" value="45"/>
+        <transform name="to_world">
+            <lookat origin="0, 0, -1"
+                    target="0, 0, 0"
+                    up    ="0, 1, 0"/>
+        </transform>
+        <sampler type="independent">
+            <integer name="sample_count" value="$spp"/>
+        </sampler>
+        <film type="hdrfilm">
+            <integer name="width"  value="$res"/>
+            <integer name="height" value="$res"/>
+            <rfilter type="gaussian"/>
+        </film>
+    </sensor>
+
+    <!-- Light -->
+    <emitter type="envmap">
+        <string name="filename" value="env.hdr"/>
+        <float name="scale" value="1"/>
+    </emitter>
+
+    <!-- Obj -->
+    <shape type="obj">
+        <string name="filename" value="mesh.obj"/>
+        <transform name="to_world">
+            <translate x="0" y="-0.1" z="0"/>
+            <scale value="0.5"/>
+            <rotate y="1" angle="180"/>
+        </transform>
+
+<!--        <bsdf type="pplastic">-->
+<!--            <texture type="bitmap" name="diffuse_reflectance">-->
+<!--                <string name="filename" value="albedo.png"/>-->
+<!--            </texture>-->
+
+<!--            <texture type="bitmap" name="alpha">-->
+<!--                <string name="filename" value="roughness_metallic.png"/>-->
+<!--            </texture>-->
+
+<!--        </bsdf>-->
+
+<!--        <bsdf type="pplastic">-->
+<!--            <texture type="bitmap" name="diffuse_reflectance">-->
+<!--                <string name="filename" value="albedo.png"/>-->
+<!--            </texture>-->
+<!--            <texture type="bitmap" name="specular_reflectance">-->
+<!--                <string name="filename" value="roughness_metallic.png"/>-->
+<!--            </texture>-->
+<!--        </bsdf>-->
+        <bsdf type="pplastic" id="RootNode">
+            <texture type="bitmap" name="diffuse_reflectance">
+                <string name="filename" value="albedo.png"/>
+            </texture>
+            <texture type="bitmap" name="specular_reflectance">
+                <string name="filename" value="roughness_metallic.png"/>
+            </texture>
+        </bsdf>
+<!--        <texture type="bitmap" id="normal_map">-->
+<!--            <string name="filename" value="normal.png"/>-->
+<!--        </texture>-->
+    </shape>
+</scene>
