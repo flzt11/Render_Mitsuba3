@@ -57,7 +57,7 @@ def render_and_save(scene_folder, file_name, save_root):
 if __name__ == "__main__":
     input_txt = r'D:\yan\Mitsuba3\Render_Mitsuba3\subfolder_names.txt'  # 包含文件名的txt文件路径
     scene_folder = r'D:\yan\shujuji\Diffusion_dataset\boundingbox_adjust'  # 替换为包含场景文件的主文件夹路径
-    save_root = r'D:\yan\shujuji\Diffusion_dataset\test'  # 请替换为你指定的保存路径
+    save_root = r'D:\yan\shujuji\Diffusion_dataset\light_test'  # 请替换为你指定的保存路径
 
     with open(input_txt, 'r') as file:
         file_names = [line.strip() for line in file if line.strip()]
