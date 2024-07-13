@@ -16,7 +16,7 @@
         <float name="focus_distance" value="1000"/>
         <float name="fov" value="45"/>
         <transform name="to_world">
-            <lookat origin="0, 0, -1"
+            <lookat origin="0, 0.5, -1"
                     target="0, 0, 0"
                     up    ="0, 1, 0"/>
         </transform>
@@ -33,37 +33,18 @@
     <!-- Light -->
     <emitter type="envmap">
         <string name="filename" value="env.hdr"/>
-        <float name="scale" value="1"/>
+        <float name="scale" value="3.5"/>
     </emitter>
 
     <!-- Obj -->
     <shape type="obj">
         <string name="filename" value="mesh.obj"/>
         <transform name="to_world">
-            <translate x="0" y="-0.1" z="0"/>
-            <scale value="0.5"/>
+            <translate x="0" y="0.1" z="0"/>  <!-- Adjusted to move the bottom center to the origin -->
+            <scale value="0.8"/>
             <rotate y="1" angle="180"/>
         </transform>
 
-<!--        <bsdf type="pplastic">-->
-<!--            <texture type="bitmap" name="diffuse_reflectance">-->
-<!--                <string name="filename" value="albedo.png"/>-->
-<!--            </texture>-->
-
-<!--            <texture type="bitmap" name="alpha">-->
-<!--                <string name="filename" value="roughness_metallic.png"/>-->
-<!--            </texture>-->
-
-<!--        </bsdf>-->
-
-<!--        <bsdf type="pplastic">-->
-<!--            <texture type="bitmap" name="diffuse_reflectance">-->
-<!--                <string name="filename" value="albedo.png"/>-->
-<!--            </texture>-->
-<!--            <texture type="bitmap" name="specular_reflectance">-->
-<!--                <string name="filename" value="roughness_metallic.png"/>-->
-<!--            </texture>-->
-<!--        </bsdf>-->
         <bsdf type="pplastic" id="RootNode">
             <texture type="bitmap" name="diffuse_reflectance">
                 <string name="filename" value="albedo.png"/>
@@ -72,8 +53,5 @@
                 <string name="filename" value="roughness_metallic.png"/>
             </texture>
         </bsdf>
-<!--        <texture type="bitmap" id="normal_map">-->
-<!--            <string name="filename" value="normal.png"/>-->
-<!--        </texture>-->
     </shape>
 </scene>
