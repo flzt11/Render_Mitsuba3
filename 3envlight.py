@@ -15,14 +15,16 @@ def move_random_hdr_files(source_folder, target_folder):
     subfolders = [os.path.join(target_folder, folder) for folder in os.listdir(target_folder) if
                   os.path.isdir(os.path.join(target_folder, folder))]
 
-    for subfolder in subfolders:
-        if not hdr_files:
-            print("源文件夹中的.hdr文件数量不足以分配给所有子文件夹")
-            break
+    hdr_index = 0
 
-        # 随机选择一个hdr文件
-        random_file = random.choice(hdr_files)
-        hdr_files.remove(random_file)  # 移除已选择的文件
+    for subfolder in subfolders:
+        # 计算需要重复利用的文件索引
+        if hdr_index >= len(hdr_files):
+            hdr_index = 0
+
+        # 选择当前的hdr文件
+        random_file = hdr_files[hdr_index]
+        hdr_index += 1
 
         # 目标文件路径
         target_file_path = os.path.join(subfolder, "env.hdr")

@@ -94,16 +94,17 @@ def render_and_save(scene_folder, file_name, save_root):
     print("I90 shape:", I90_mean.shape)
     print("I135 shape:", I135_mean.shape)
 
-    cv2.imwrite(os.path.join(save_path, 'I0.png'), I0_img)
-    cv2.imwrite(os.path.join(save_path, 'I45.png'), I45_img)
-    cv2.imwrite(os.path.join(save_path, 'I90.png'), I90_img)
-    cv2.imwrite(os.path.join(save_path, 'I135.png'), I135_img)
+    cv2.imwrite(os.path.join(save_path, 'I0.png'), cv2.cvtColor(I0_img, cv2.COLOR_BGR2RGB))
+    cv2.imwrite(os.path.join(save_path, 'I45.png'), cv2.cvtColor(I45_img, cv2.COLOR_BGR2RGB))
+    cv2.imwrite(os.path.join(save_path, 'I90.png'), cv2.cvtColor(I90_img, cv2.COLOR_BGR2RGB))
+    cv2.imwrite(os.path.join(save_path, 'I135.png'), cv2.cvtColor(I135_img, cv2.COLOR_BGR2RGB))
 
     # 重新计算S0, S1, S2
     S0_new = (I0_mean + I45_mean + I90_mean + I135_mean) / 2
     S1_new = I0_mean - I90_mean
     S2_new = I45_mean - I135_mean
     S0_image = (((I0 + I45 + I90 + I135) / 4) * 65535).astype(np.uint16)
+    S0_image_RGB = cv2.cvtColor(S0_image, cv2.COLOR_BGR2RGB)
 
     cv2.imwrite(os.path.join(save_path, 'S1_new.png'), (S1_new * 65535).astype(np.uint16))
     cv2.imwrite(os.path.join(save_path, 'S2_new.png'), (S2_new * 65535).astype(np.uint16))
@@ -157,7 +158,7 @@ def render_and_save(scene_folder, file_name, save_root):
 
     plt.savefig(os.path.join(save_path, f'{file_name}.png'))
     # 保存为16位PNG格式
-    cv2.imwrite(os.path.join(save_path, 'S0_image' + '.png'), S0_image)
+    cv2.imwrite(os.path.join(save_path, 'S0_image' + '.png'), S0_image_RGB)
     cv2.imwrite(os.path.join(save_path, 'DOP_16' + '.png'), dop_16bit)
     cv2.imwrite(os.path.join(save_path, 'AOP_16' + '.png'), aop_16bit)
     cv2.imwrite(os.path.join(save_path, 'AOP_sin' + '.png'), sin_aop_16bit)
