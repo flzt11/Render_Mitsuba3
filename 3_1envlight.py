@@ -36,7 +36,7 @@ def move_random_hdr_files(source_folder, target_folder):
 
 
 # 示例用法
-source_folder_path = r"D:\yan\shujuji\Diffusion_dataset\envlight\env"  # 替换为实际源文件夹路径
+source_folder_path = r"D:\yan\shujuji\Diffusion_dataset\env_right"  # 替换为实际源文件夹路径
 target_folder_path = r"D:\yan\shujuji\Diffusion_dataset\boundingbox_adjust"  # 替换为实际目标文件夹路径
 
 move_random_hdr_files(source_folder_path, target_folder_path)

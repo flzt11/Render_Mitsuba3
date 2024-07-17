@@ -5,22 +5,21 @@ import numpy as np
 import os
 from tqdm import tqdm
 import time
-import OpenEXR
-import Imath
-import json
 
 def visualize_aop(aop):
+    # 确保 aop 的范围在 [-π/2, π/2] 之间
     aop = np.clip(aop, -np.pi/2, np.pi/2)
-    aop_normalized = (aop + np.pi/2) / np.pi
-    aop_uint8 = np.uint8(aop_normalized * 255)
+    aop_normalized = (aop + np.pi/2) / np.pi  # 将 aop 范围从 [-0.5 * π, 0.5 * π] 转换到 [0, 1]
+    aop_uint8 = np.uint8(aop_normalized * 255)  # 将 aop 归一化后的值转换为 0-255 范围的 uint8
     aop_map = cv2.applyColorMap(aop_uint8, cv2.COLORMAP_JET)
     return aop_map
 
 def visualize_dolp(dolp):
-    dolp_uint8 = np.uint8(dolp * 255)
+    dolp_uint8 = np.uint8(dolp * 255)  # 将 dolp 值转换为 0-255 范围的 uint8
     dolp_map = cv2.applyColorMap(dolp_uint8, cv2.COLORMAP_JET)
     return dolp_map
 
+# 设置渲染的 variant
 mi.set_variant('cuda_spectral_polarized')
 
 def save_with_colorbar(image, title, save_path, unit=None, vmin=None, vmax=None):
@@ -28,48 +27,13 @@ def save_with_colorbar(image, title, save_path, unit=None, vmin=None, vmax=None)
     im = plt.imshow(image, cmap='jet', vmin=vmin, vmax=vmax)
     cbar = plt.colorbar(im)
     if unit:
-        cbar.set_label(unit)
+        cbar.set_label(unit)  # 设置颜色条的标签（单位）
     plt.title(title)
     plt.savefig(save_path, bbox_inches='tight')
     plt.close()
 
 def normalize(image):
     return (image - image.min()) / (image.max() - image.min())
-
-
-def save_exr(image, save_path):
-    # 创建一个EXR文件的头部信息，指定图像的宽度和高度
-    header = OpenEXR.Header(image.shape[1], image.shape[0])
-    # 定义每个通道的像素类型为FLOAT（32位浮点数）
-    float_chan = Imath.Channel(Imath.PixelType(Imath.PixelType.FLOAT))
-    # 设置头部信息中的通道信息，指定图像包含红、绿、蓝三个通道
-    header['channels'] = dict(R=float_chan, G=float_chan, B=float_chan)
-    # 创建一个EXR输出文件，使用指定的头部信息
-    exr = OpenEXR.OutputFile(save_path, header)
-    # 提取图像的红色通道，并将其转换为32位浮点数，再转为字节数据
-    r = (image[:, :, 0]).astype(np.float32).tobytes()
-    # 提取图像的绿色通道，并将其转换为32位浮点数，再转为字节数据
-    g = (image[:, :, 1]).astype(np.float32).tobytes()
-    # 提取图像的蓝色通道，并将其转换为32位浮点数，再转为字节数据
-    b = (image[:, :, 2]).astype(np.float32).tobytes()
-    # 将三个通道的数据写入EXR文件
-    exr.writePixels({'R': r, 'G': g, 'B': b})
-    # 关闭EXR文件
-    exr.close()
-
-
-def save_histogram(image, title, save_path):
-    colors = ('b', 'g', 'r')
-    plt.figure()
-    bins = np.linspace(image.min(), image.max(), 256)
-    for i, color in enumerate(colors):
-        hist, bin_edges = np.histogram(image[:, :, i], bins=bins)
-        plt.plot(bin_edges[:-1], hist, color=color)
-    plt.title(title)
-    plt.xlabel('Pixel Value')
-    plt.ylabel('Frequency')
-    plt.savefig(save_path)
-    plt.close()
 
 def render_and_save(scene_folder, file_name, save_root):
     scene_path = os.path.join(scene_folder, file_name, 'config.xml')
@@ -87,11 +51,7 @@ def render_and_save(scene_folder, file_name, save_root):
     S1 = np.array(mi.TensorXf(channels['S1']))
     S2 = np.array(mi.TensorXf(channels['S2']))
 
-    print()
-    print(type(S0[0][0][0]))
-    print(type(S1[0][0][0]))
-    print(type(S2[0][0][0]))
-
+    # 保留Depth和Normal的保存部分，并保存为16位图像
     depth = np.array(mi.TensorXf(channels['dd']))
     depth = np.clip(depth / depth.max(), 0, 1)
     cv2.imwrite(os.path.join(save_path, 'depth.png'), (depth * 65535).astype(np.uint16))
@@ -105,18 +65,13 @@ def render_and_save(scene_folder, file_name, save_root):
     normal = (normal + 1) / 2
     cv2.imwrite(os.path.join(save_path, 'normal.png'), (normal * 65535).astype(np.uint16))
 
+    # 计算I0, I45, I90, I135
     I0 = (S0 + S1) / 2
     I45 = (S0 + S2) / 2
     I90 = (S0 - S1) / 2
     I135 = (S0 - S2) / 2
 
-    for image, name in zip([I0, I45, I90, I135], ['I0', 'I45', 'I90', 'I135']):
-        plt.figure()
-        plt.hist(image.ravel(), bins=256, fc='k', ec='k')
-        plt.title(f'Histogram of {name}')
-        plt.savefig(os.path.join(save_path, f'{name}_histogram.png'))
-        plt.close()
-
+    # 裁剪I0, I45, I90, I135到[0,1]范围并保存为16位图像
     I0 = np.clip(I0, 0, 1)
     I45 = np.clip(I45, 0, 1)
     I90 = np.clip(I90, 0, 1)
@@ -127,15 +82,18 @@ def render_and_save(scene_folder, file_name, save_root):
     I90_img = (I90 * 65535).astype(np.uint16)
     I135_img = (I135 * 65535).astype(np.uint16)
 
+    # 计算每个通道的平均值
     I0_mean = I0.mean(-1)
     I45_mean = I45.mean(-1)
     I90_mean = I90.mean(-1)
     I135_mean = I135.mean(-1)
 
-    print("")
+    # 输出 S0, S1, S2 的形状
     print("S0 shape:", S0.shape)
     print("S1 shape:", S1.shape)
     print("S2 shape:", S2.shape)
+
+    # 输出 I0, I45, I90, I135 的形状
     print("I0 shape:", I0_mean.shape)
     print("I45 shape:", I45_mean.shape)
     print("I90 shape:", I90_mean.shape)
@@ -146,6 +104,7 @@ def render_and_save(scene_folder, file_name, save_root):
     cv2.imwrite(os.path.join(save_path, 'I90.png'), cv2.cvtColor(I90_img, cv2.COLOR_BGR2RGB))
     cv2.imwrite(os.path.join(save_path, 'I135.png'), cv2.cvtColor(I135_img, cv2.COLOR_BGR2RGB))
 
+    # 重新计算S0, S1, S2
     S0_new = (I0_mean + I45_mean + I90_mean + I135_mean) / 2
     S1_new = I0_mean - I90_mean
     S2_new = I45_mean - I135_mean
@@ -156,24 +115,38 @@ def render_and_save(scene_folder, file_name, save_root):
     cv2.imwrite(os.path.join(save_path, 'S2_new.png'), (S2_new * 65535).astype(np.uint16))
 
     aop = np.arctan2(S2_new, S1_new + 1e-8) / 2
+
+    # 将 aop 范围从 [-0.5 * π, 0.5 * π] 转换到 [0, 1]
     aop_normalized = (aop + 0.5 * np.pi) / np.pi
+
+    # 将范围从 [0, 1] 转换到 [0, 65535] 并转换为16位整数
     aop_16bit = (aop_normalized * 65535).astype(np.uint16)
+
     dop = np.clip(np.sqrt(S1_new ** 2 + S2_new ** 2) / (S0_new + 1e-8), a_min=0, a_max=1)
+
+    # 将 im_dop 直接映射到 [0, 65535] 并转换为16位整数
     dop_16bit = (dop * 65535).astype(np.uint16)
 
     aop_map = visualize_aop(aop)
     dop_map = visualize_dolp(dop)
 
+    # 带有colorbar的AOP和DOP图像保存
     save_with_colorbar(aop_map[:, :, [2, 1, 0]], 'AoP', os.path.join(save_path, 'AoP_with_colorbar.png'), unit='radians', vmin=-np.pi/2, vmax=np.pi/2)
     save_with_colorbar(dop_map[:, :, [2, 1, 0]], 'DoP', os.path.join(save_path, 'DoP_with_colorbar.png'), unit='dimensionless', vmin=0, vmax=1)
 
+    # 计算正弦和余弦
     sin_aop = np.sin(aop * 2)
     cos_aop = np.cos(aop * 2)
+
+    # 将范围从 [-1, 1] 映射到 [0, 1]
     sin_aop_normalized = (sin_aop + 1) / 2
     cos_aop_normalized = (cos_aop + 1) / 2
+
+    # 将范围从 [0, 1] 映射到 [0, 65535] 并转换为16位整数
     sin_aop_16bit = (sin_aop_normalized * 65535).astype(np.uint16)
     cos_aop_16bit = (cos_aop_normalized * 65535).astype(np.uint16)
 
+    # 合并三个通道成一个三通道图像
     three_channel_image = np.stack((sin_aop_16bit, cos_aop_16bit, dop_16bit), axis=-1)
 
     fig, ax = plt.subplots(ncols=5, figsize=(30, 5))
@@ -189,6 +162,7 @@ def render_and_save(scene_folder, file_name, save_root):
     ax[4].set_xlabel("AoP", size=14, weight='bold')
 
     plt.savefig(os.path.join(save_path, f'{file_name}.png'))
+    # 保存为16位PNG格式
     cv2.imwrite(os.path.join(save_path, 'S0_image' + '.png'), S0_image_RGB)
     cv2.imwrite(os.path.join(save_path, 'DOP_16' + '.png'), dop_16bit)
     cv2.imwrite(os.path.join(save_path, 'AOP_16' + '.png'), aop_16bit)
@@ -196,14 +170,7 @@ def render_and_save(scene_folder, file_name, save_root):
     cv2.imwrite(os.path.join(save_path, 'AOP_cos' + '.png'), cos_aop_16bit)
     cv2.imwrite(os.path.join(save_path, 'AOP_DOP' + '.png'), three_channel_image)
 
-    save_exr(S0, os.path.join(save_path, 'S0.exr'))
-    save_exr(S1, os.path.join(save_path, 'S1.exr'))
-    save_exr(S2, os.path.join(save_path, 'S2.exr'))
-
-    save_histogram(S0, 'Histogram of S0', os.path.join(save_path, 'histogram_S0.png'))
-    save_histogram(S1, 'Histogram of S1', os.path.join(save_path, 'histogram_S1.png'))
-    save_histogram(S2, 'Histogram of S2', os.path.join(save_path, 'histogram_S2.png'))
-
+    # 保存最大最小值到txt文件
     with open(os.path.join(save_path, f'{file_name}.txt'), 'w') as f:
         f.write(f'I0_mean_max: {I0.max()}\n')
         f.write(f'I0_mean_min: {I0.min()}\n')
@@ -240,36 +207,20 @@ def render_and_save(scene_folder, file_name, save_root):
 
     print(f"Processed and saved: {file_name}")
 
-def save_progress(progress_file, processed_files):
-    with open(progress_file, 'w') as f:
-        json.dump(processed_files, f)
-
-def load_progress(progress_file):
-    if os.path.exists(progress_file):
-        with open(progress_file, 'r') as f:
-            return json.load(f)
-    return []
-
 if __name__ == "__main__":
-    input_txt = r'D:\yan\Mitsuba3\Render_Mitsuba3\subfolder_names.txt'
-    scene_folder = r'D:\yan\shujuji\Diffusion_dataset\boundingbox_adjust'
-    save_root = r'D:\yan\shujuji\Diffusion_dataset\synthetic_data'
-    progress_file = r'D:\yan\Mitsuba3\Render_Mitsuba3\progress.json'
+    input_txt = r'D:\yan\Mitsuba3\Render_Mitsuba3\subfolder_names.txt'  # 包含文件名的txt文件路径
+    scene_folder = r'D:\yan\shujuji\Diffusion_dataset\boundingbox_adjust'  # 替换为包含场景文件的主文件夹路径
+    save_root = r'D:\yan\shujuji\Diffusion_dataset\synthetic_data'  # 请替换为你指定的保存路径
 
     with open(input_txt, 'r') as file:
         file_names = [line.strip() for line in file if line.strip()]
 
-    processed_files = load_progress(progress_file)
-    files_to_process = [f for f in file_names if f not in processed_files]
-
-    total_files = len(files_to_process)
+    total_files = len(file_names)
     start_time = time.time()
 
-    for i, file_name in enumerate(tqdm(files_to_process, desc="Rendering", unit="file")):
+    for i, file_name in enumerate(tqdm(file_names, desc="Rendering", unit="file")):
         try:
             render_and_save(scene_folder, file_name, save_root)
-            processed_files.append(file_name)
-            save_progress(progress_file, processed_files)
         except Exception as e:
             tqdm.write(f"Error processing {file_name}: {e}")
         elapsed_time = time.time() - start_time

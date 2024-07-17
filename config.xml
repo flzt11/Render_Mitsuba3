@@ -1,6 +1,7 @@
 <scene version="3.0.0">
-    <default name="spp" value="512"/>
-    <default name="res" value="512"/>
+    <default name="spp" value="4096"/>
+    <default name="res_w" value="1500"/>
+    <default name="res_h" value="1500"/>
 
     <integrator type="stokes">
         <integrator type="aov">
@@ -24,8 +25,8 @@
             <integer name="sample_count" value="$spp"/>
         </sampler>
         <film type="hdrfilm">
-            <integer name="width"  value="$res"/>
-            <integer name="height" value="$res"/>
+            <integer name="width"  value="$res_w"/>
+            <integer name="height" value="$res_h"/>
             <rfilter type="gaussian"/>
         </film>
     </sensor>
