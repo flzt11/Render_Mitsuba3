@@ -39,11 +39,56 @@ def save_histogram(image, title, save_path):
     plt.close()
 
 
-def process_image(image, percentage):
-    flattened = image.flatten()
-    threshold = np.percentile(flattened, 100 - percentage)
+# def process_image(image, threshold):
+#     normalized = np.clip(image / threshold, 0, 1)
+#     return normalized
+#
+# def unified_normalization(I0, I45, I90, I135, percentage):
+#     # Flatten all images and calculate the threshold for each
+#     I0_threshold = np.percentile(I0.flatten(), 100 - percentage)
+#     I45_threshold = np.percentile(I45.flatten(), 100 - percentage)
+#     I90_threshold = np.percentile(I90.flatten(), 100 - percentage)
+#     I135_threshold = np.percentile(I135.flatten(), 100 - percentage)
+#
+#     # Find the maximum threshold
+#     max_threshold = max(I0_threshold, I45_threshold, I90_threshold, I135_threshold)
+#
+#     # Normalize all images using the maximum threshold
+#     I0_normalized = process_image(I0, max_threshold)
+#     I45_normalized = process_image(I45, max_threshold)
+#     I90_normalized = process_image(I90, max_threshold)
+#     I135_normalized = process_image(I135, max_threshold)
+#
+#     return I0_normalized, I45_normalized, I90_normalized, I135_normalized, max_threshold
+
+
+def process_image(image, threshold, max_image_value):
+    # 如果阈值小于1，则使用图像的最大值
+    if threshold < 1:
+        threshold = max_image_value
     normalized = np.clip(image / threshold, 0, 1)
-    return normalized, threshold
+    return normalized
+
+def unified_normalization(I0, I45, I90, I135, percentage):
+    # Flatten all images and calculate the threshold for each
+    I0_threshold = np.percentile(I0.flatten(), 100 - percentage)
+    I45_threshold = np.percentile(I45.flatten(), 100 - percentage)
+    I90_threshold = np.percentile(I90.flatten(), 100 - percentage)
+    I135_threshold = np.percentile(I135.flatten(), 100 - percentage)
+
+    # Find the maximum threshold
+    max_threshold = max(I0_threshold, I45_threshold, I90_threshold, I135_threshold)
+
+    # Find the maximum value in all images
+    max_image_value = max(I0.max(), I45.max(), I90.max(), I135.max())
+
+    # Normalize all images using the dynamically adjusted threshold
+    I0_normalized = process_image(I0, max_threshold, max_image_value)
+    I45_normalized = process_image(I45, max_threshold, max_image_value)
+    I90_normalized = process_image(I90, max_threshold, max_image_value)
+    I135_normalized = process_image(I135, max_threshold, max_image_value)
+
+    return I0_normalized, I45_normalized, I90_normalized, I135_normalized, max_threshold
 
 
 def save_png(image, save_path):
@@ -102,10 +147,9 @@ def process_exr_files(dir_path, save_path, percentage):
     save_histogram(I90, 'Histogram of I90', os.path.join(save_path, 'I90_origin_hist.png'))
     save_histogram(I135, 'Histogram of I135', os.path.join(save_path, 'I135_origin_hist.png'))
 
-    I0_normalized, I0_threshold = process_image(I0, percentage)
-    I45_normalized, I45_threshold = process_image(I45, percentage)
-    I90_normalized, I90_threshold = process_image(I90, percentage)
-    I135_normalized, I135_threshold = process_image(I135, percentage)
+    I0_normalized, I45_normalized, I90_normalized, I135_normalized, max_threshold = unified_normalization(
+        I0, I45, I90, I135, percentage
+    )
 
     I0_img_color = (I0_normalized * 65535).astype(np.uint16)
     I45_img_color = (I45_normalized * 65535).astype(np.uint16)
@@ -186,12 +230,10 @@ def process_exr_files(dir_path, save_path, percentage):
     cv2.imwrite(os.path.join(save_path, 'AOP_sin.png'), sin_aop_16bit)
     cv2.imwrite(os.path.join(save_path, 'AOP_cos.png'), cos_aop_16bit)
     cv2.imwrite(os.path.join(save_path, 'AOP_DOP.png'), three_channel_image)
+    plt.close()
 
     with open(os.path.join(save_path, 'thresholds.txt'), 'w') as f:
-        f.write(f'I0 threshold: {I0_threshold}\n')
-        f.write(f'I45 threshold: {I45_threshold}\n')
-        f.write(f'I90 threshold: {I90_threshold}\n')
-        f.write(f'I135 threshold: {I135_threshold}\n')
+        f.write(f'I threshold: {max_threshold}\n')
         f.write(f'aop_max: {aop.max()}\n')
         f.write(f'aop_min: {aop.min()}\n')
         f.write(f'aop_normalized_max: {aop_normalized.max()}\n')
@@ -233,5 +275,5 @@ def main(input_folder_path, save_path, percentage):
 
 if __name__ == "__main__":
     input_folder = r'D:\yan\shujuji\Diffusion_dataset\synthetic_data'
-    save_path = r'D:\yan\shujuji\Diffusion_dataset\processed_data'
-    main(input_folder, save_path, 0.1)
+    save_path = r'D:\yan\shujuji\Diffusion_dataset\processed_data_ng'
+    main(input_folder, save_path, 0.01)
