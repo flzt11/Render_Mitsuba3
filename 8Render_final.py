@@ -87,11 +87,6 @@ def render_and_save(scene_folder, file_name, save_root):
     S1 = np.array(mi.TensorXf(channels['S1']))
     S2 = np.array(mi.TensorXf(channels['S2']))
 
-    print()
-    print(type(S0[0][0][0]))
-    print(type(S1[0][0][0]))
-    print(type(S2[0][0][0]))
-
     depth = np.array(mi.TensorXf(channels['dd']))
     depth = np.clip(depth / depth.max(), 0, 1)
     cv2.imwrite(os.path.join(save_path, 'depth.png'), (depth * 65535).astype(np.uint16))
@@ -114,7 +109,7 @@ def render_and_save(scene_folder, file_name, save_root):
         plt.figure()
         plt.hist(image.ravel(), bins=256, fc='k', ec='k')
         plt.title(f'Histogram of {name}')
-        plt.savefig(os.path.join(save_path, f'{name}_histogram.png'))
+        plt.savefig(os.path.join(save_path, f'{name}_origin_hist.png'))
         plt.close()
 
     I0 = np.clip(I0, 0, 1)
@@ -132,6 +127,14 @@ def render_and_save(scene_folder, file_name, save_root):
     I90_mean = I90.mean(-1)
     I135_mean = I135.mean(-1)
 
+    for image, name in zip([I0_mean, I45_mean, I90_mean, I135_mean], ['I0', 'I45', 'I90', 'I135']):
+        plt.figure()
+        plt.hist(image.ravel(), bins=256, fc='k', ec='k')
+        plt.title(f'Histogram of {name}')
+        plt.savefig(os.path.join(save_path, f'{name}_mean_hist.png'))
+        plt.close()
+
+
     print("")
     print("S0 shape:", S0.shape)
     print("S1 shape:", S1.shape)
@@ -141,10 +144,10 @@ def render_and_save(scene_folder, file_name, save_root):
     print("I90 shape:", I90_mean.shape)
     print("I135 shape:", I135_mean.shape)
 
-    cv2.imwrite(os.path.join(save_path, 'I0.png'), cv2.cvtColor(I0_img, cv2.COLOR_BGR2RGB))
-    cv2.imwrite(os.path.join(save_path, 'I45.png'), cv2.cvtColor(I45_img, cv2.COLOR_BGR2RGB))
-    cv2.imwrite(os.path.join(save_path, 'I90.png'), cv2.cvtColor(I90_img, cv2.COLOR_BGR2RGB))
-    cv2.imwrite(os.path.join(save_path, 'I135.png'), cv2.cvtColor(I135_img, cv2.COLOR_BGR2RGB))
+    cv2.imwrite(os.path.join(save_path, 'I0_color.png'), cv2.cvtColor(I0_img, cv2.COLOR_BGR2RGB))
+    cv2.imwrite(os.path.join(save_path, 'I45_color.png'), cv2.cvtColor(I45_img, cv2.COLOR_BGR2RGB))
+    cv2.imwrite(os.path.join(save_path, 'I90_color.png'), cv2.cvtColor(I90_img, cv2.COLOR_BGR2RGB))
+    cv2.imwrite(os.path.join(save_path, 'I135_color.png'), cv2.cvtColor(I135_img, cv2.COLOR_BGR2RGB))
 
     S0_new = (I0_mean + I45_mean + I90_mean + I135_mean) / 2
     S1_new = I0_mean - I90_mean
@@ -188,7 +191,7 @@ def render_and_save(scene_folder, file_name, save_root):
     ax[4].imshow(aop_map[:, :, [2, 1, 0]])
     ax[4].set_xlabel("AoP", size=14, weight='bold')
 
-    plt.savefig(os.path.join(save_path, f'{file_name}.png'))
+    plt.savefig(os.path.join(save_path, f'{file_name}_chart.png'))
     cv2.imwrite(os.path.join(save_path, 'S0_image' + '.png'), S0_image_RGB)
     cv2.imwrite(os.path.join(save_path, 'DOP_16' + '.png'), dop_16bit)
     cv2.imwrite(os.path.join(save_path, 'AOP_16' + '.png'), aop_16bit)
@@ -200,9 +203,9 @@ def render_and_save(scene_folder, file_name, save_root):
     save_exr(S1, os.path.join(save_path, 'S1.exr'))
     save_exr(S2, os.path.join(save_path, 'S2.exr'))
 
-    save_histogram(S0, 'Histogram of S0', os.path.join(save_path, 'histogram_S0.png'))
-    save_histogram(S1, 'Histogram of S1', os.path.join(save_path, 'histogram_S1.png'))
-    save_histogram(S2, 'Histogram of S2', os.path.join(save_path, 'histogram_S2.png'))
+    save_histogram(S0, 'Histogram of S0', os.path.join(save_path, 'S0_hist.png'))
+    save_histogram(S1, 'Histogram of S1', os.path.join(save_path, 'S1_hist.png'))
+    save_histogram(S2, 'Histogram of S2', os.path.join(save_path, 'S2_hist.png'))
 
     with open(os.path.join(save_path, f'{file_name}.txt'), 'w') as f:
         f.write(f'I0_mean_max: {I0.max()}\n')
